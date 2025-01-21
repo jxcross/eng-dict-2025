@@ -39,6 +39,8 @@ def load_data(uploaded_file):
         st.session_state.masked_sentences = {}
         st.session_state.hint_levels = {}
         st.session_state.previous_file = uploaded_file.name
+        if 'audio_html' in st.session_state:    
+            del st.session_state.audio_html     
     
     if uploaded_file.name.endswith('.csv'):
         df = pd.read_csv(uploaded_file)
