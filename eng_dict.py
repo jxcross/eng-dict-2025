@@ -39,8 +39,6 @@ def load_data(uploaded_file):
         st.session_state.masked_sentences = {}
         st.session_state.hint_levels = {}
         st.session_state.previous_file = uploaded_file.name
-        if 'audio_html' in st.session_state:    
-            del st.session_state.audio_html     
     
     if uploaded_file.name.endswith('.csv'):
         df = pd.read_csv(uploaded_file)
@@ -132,6 +130,28 @@ def main():
         st.session_state.hint_levels = {}
     if 'previous_file' not in st.session_state:
         st.session_state.previous_file = None
+
+    # 힌트 버튼 콜백 함수
+    def on_hint_click():
+        current_idx = st.session_state.current_index
+        # 힌트 레벨 증가
+        st.session_state.hint_levels[current_idx] = (
+            st.session_state.hint_levels.get(current_idx, 0) + 1
+        )
+        
+        # 현재 문장 가져오기
+        original_sentence = df.iloc[current_idx]['ENGLISH']
+        
+        # 증가된 힌트 레벨로 마스킹 다시 적용
+        st.session_state.masked_sentences[current_idx] = mask_sentence(
+            original_sentence,
+            current_masked=st.session_state.masked_sentences[current_idx],
+            show_all=show_all,
+            hide_all=hide_all,
+            show_punctuation=show_punctuation,
+            show_numbers=show_numbers,
+            hint_level=st.session_state.hint_levels[current_idx]
+        )
     
     # 사이드바 설정
     with st.sidebar:
@@ -225,7 +245,8 @@ def main():
         if st.session_state.current_index not in st.session_state.hint_levels:
             st.session_state.hint_levels[st.session_state.current_index] = 0
             
-        st.markdown(f"```\n{st.session_state.masked_sentences[st.session_state.current_index]}\n```")
+        #st.markdown(f"```\n{st.session_state.masked_sentences[st.session_state.current_index]}\n```")
+        st.text(f"{st.session_state.masked_sentences[st.session_state.current_index]}")
         
         # 마스킹이 완전히 해제되지 않은 경우에만 입력 처리
         if st.session_state.masked_sentences[st.session_state.current_index] != original_sentence:
@@ -253,20 +274,7 @@ def main():
             )
             
             # 힌트 버튼
-            if st.button("힌트"):
-                max_length = max(len(word) for word in original_sentence.split())
-                if st.session_state.hint_levels[st.session_state.current_index] < max_length:
-                    st.session_state.hint_levels[st.session_state.current_index] += 1
-                    # 현재 마스킹된 상태를 유지하면서 힌트 적용
-                    st.session_state.masked_sentences[st.session_state.current_index] = mask_sentence(
-                        original_sentence,
-                        current_masked=st.session_state.masked_sentences[st.session_state.current_index],
-                        show_all=show_all,
-                        hide_all=hide_all,
-                        show_punctuation=show_punctuation,
-                        show_numbers=show_numbers,
-                        hint_level=st.session_state.hint_levels[st.session_state.current_index]
-                    )
+            st.button("힌트", on_click=on_hint_click)
             
             # "모두 보이기" 선택 시 마스킹 해제
             if show_all:
@@ -278,3 +286,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    
